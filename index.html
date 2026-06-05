@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRTF 3D 空间音频演示</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: -apple-system, "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #eee; min-height:100vh; padding:30px 20px;
+}
+.container { max-width:800px; margin:0 auto; }
+h1 {
+    text-align:center; font-size:2em; margin-bottom:8px;
+    background: linear-gradient(90deg, #f093fb, #f5576c, #4facfe);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.subtitle { text-align:center; color:#aaa; margin-bottom:30px; font-size:0.95em; }
+.alert {
+    background: rgba(255,152,0,0.2); border:1px solid rgba(255,152,0,0.4);
+    border-radius:12px; padding:16px 20px; margin-bottom:28px;
+    text-align:center; font-size:1.05em;
+}
+.alert strong { color:#ff9800; }
+table {
+    width:100%; border-collapse:separate; border-spacing:0 8px;
+}
+td {
+    padding:12px 16px; background:rgba(255,255,255,0.06);
+    vertical-align:middle;
+}
+td:first-child { border-radius:10px 0 0 10px; width:130px; }
+td:last-child { border-radius:0 10px 10px 0px; }
+.badge {
+    display:inline-block; padding:4px 14px; border-radius:20px;
+    color:#fff; font-weight:bold; font-size:0.9em;
+}
+code { color:#aaa; font-size:0.85em; }
+audio { vertical-align:middle; }
+.footer {
+    text-align:center; margin-top:36px; color:#666; font-size:0.8em;
+}
+img.chart {
+    width:100%; max-width:780px; margin:20px auto; display:block;
+    border-radius:12px; box-shadow:0 4px 30px rgba(0,0,0,0.4);
+}
+.qr-hint {
+    text-align:center; margin-top:40px; padding:24px;
+    background:rgba(255,255,255,0.04); border-radius:14px;
+}
+.qr-hint h3 { margin-bottom:10px; color:#4facfe; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎧 HRTF 3D 空间音频</h1>
+<p class="subtitle">信号处理课程汇报 · 双耳空间音频演示</p>
+
+<div class="alert">
+    ⚠️ <strong>请佩戴耳机聆听！</strong>音箱播放将失去空间定位效果。
+</div>
+
+<table>
+<thead><tr><th>方位</th><th>参数</th><th>试听</th></tr></thead>
+<tbody>
+
+        <tr>
+            <td><span class="badge" style="background:#E91E63">正前方</span></td>
+            <td><code>方位=+0° 仰角=+0°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+0_e+0.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#FF9800">右前方 45°</span></td>
+            <td><code>方位=+45° 仰角=+0°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+45_e+0.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#4CAF50">正右方 90°</span></td>
+            <td><code>方位=+90° 仰角=+0°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+90_e+0.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#2196F3">左前方 -45°</span></td>
+            <td><code>方位=-45° 仰角=+0°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a-45_e+0.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#9C27B0">正左方 -90°</span></td>
+            <td><code>方位=-90° 仰角=+0°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a-90_e+0.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#00BCD4">前上方 45°</span></td>
+            <td><code>方位=+0° 仰角=+45°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+0_e+45.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#FF5722">头顶 90°</span></td>
+            <td><code>方位=+0° 仰角=+90°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+0_e+90.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+        <tr>
+            <td><span class="badge" style="background:#795548">右前上方</span></td>
+            <td><code>方位=+45° 仰角=+30°</code></td>
+            <td><audio controls preload="none" style="width:280px">
+                <source src="3d_a+45_e+30.wav" type="audio/wav">
+            </audio></td>
+        </tr>
+</tbody>
+</table>
+
+<img class="chart" src="hrtf_comparison.png" alt="HRTF对比图">
+<img class="chart" src="itd_comparison.png" alt="ITD对比图">
+
+<div class="qr-hint">
+    <h3>📱 扫码试听</h3>
+    <p style="color:#aaa;">将此文件夹托管到静态服务器（或局域网共享），<br>生成二维码贴在 PPT 上，学生扫码即可用手机耳机试听。</p>
+    <p style="color:#666; margin-top:12px; font-size:0.85em;">
+        推荐工具: <code>python -m http.server 8080</code> 启动本地服务器 + 草料二维码生成器
+    </p>
+</div>
+
+<p class="footer">HRTF 渲染基于球头模型 (Woodworth) + 耳廓陷波 + 早期反射</p>
+</div>
+</body>
+</html>
