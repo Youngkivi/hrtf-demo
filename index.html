@@ -1,431 +1,347 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HRTF 3D 空间音频 — 信号处理课程汇报</title>
+<title>HRTF 3D 空间音频演示</title>
 <style>
-  /* ===== RESET & TOKENS ===== */
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: -apple-system, "Microsoft YaHei", sans-serif;
+    background: #0b0b12;
+    color: #ddd; min-height:100vh; padding:30px 20px 60px;
+}
+.container { max-width:860px; margin:0 auto; }
 
-  :root {
-    --bg-deep:    #080b14;
-    --bg-surface: #0f1421;
-    --bg-card:    #151b2b;
-    --bg-card-hover: #1a2135;
-    --border:     rgba(255,255,255,0.06);
-    --text-primary:   #e8eaf0;
-    --text-secondary: #9298a8;
-    --text-muted:     #5c6275;
-    --accent:     #f0a458;
-    --accent-2:   #65b8c2;
-    --accent-3:   #c084fc;
-    --accent-4:   #fb7185;
-    --radius-xl:  20px;
-    --radius-lg:  14px;
-    --radius-md:  10px;
-    --radius-sm:  8px;
-    --transition: 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  /* ===== BASE ===== */
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", -apple-system, system-ui, sans-serif;
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    line-height: 1.65;
-    min-height: 100dvh;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ===== NOISE OVERLAY ===== */
-  body::before {
-    content: "";
-    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-    opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  /* ===== AMBIENT ORBS ===== */
-  .ambient { position: fixed; pointer-events: none; z-index: 0; }
-  .ambient-1 {
-    top: -320px; left: -180px;
-    width: 700px; height: 700px;
-    background: radial-gradient(circle, rgba(240,164,88,0.12) 0%, transparent 70%);
-  }
-  .ambient-2 {
-    bottom: -200px; right: -200px;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(101,184,194,0.08) 0%, transparent 70%);
-  }
-  .ambient-3 {
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 800px; height: 500px;
-    background: radial-gradient(ellipse, rgba(192,132,252,0.04) 0%, transparent 70%);
-  }
-
-  /* ===== CONTAINER ===== */
-  .container { max-width: 920px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
-
-  /* ===== NAV ===== */
-  nav {
-    position: sticky; top: 20px; z-index: 100;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .nav-pill {
-    display: flex; gap: 4px;
-    background: rgba(21,27,43,0.85);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--border);
-    border-radius: 50px; padding: 5px;
-  }
-  .nav-pill a {
-    display: block; padding: 9px 22px; border-radius: 50px;
-    color: var(--text-secondary); text-decoration: none;
-    font-size: 0.88rem; font-weight: 500;
-    transition: var(--transition);
-    letter-spacing: 0.01em;
-  }
-  .nav-pill a:hover,
-  .nav-pill a.active { background: var(--bg-card); color: var(--text-primary); }
-
-  /* ===== SECTIONS ===== */
-  section { padding: 80px 0; }
-
-  /* ===== HERO ===== */
-  .hero { padding: 100px 0 60px; text-align: center; position: relative; }
-  .hero-tag {
-    display: inline-block; padding: 5px 18px;
-    border: 1px solid rgba(240,164,88,0.25);
-    border-radius: 50px;
-    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
-    color: var(--accent); text-transform: uppercase;
-    margin-bottom: 28px;
-  }
-  .hero h1 {
-    font-size: clamp(2.4rem, 5vw, 3.6rem);
-    font-weight: 800; letter-spacing: -0.02em;
-    line-height: 1.15; margin-bottom: 18px;
-    background: linear-gradient(135deg, #e8eaf0 0%, #a5b0c8 50%, #e8eaf0 100%);
+/* ---- 头部 ---- */
+.header {
+    text-align:center; margin-bottom:40px;
+}
+h1 {
+    font-size:2.2em; margin-bottom:6px; letter-spacing:2px;
+    background: linear-gradient(135deg, #f093fb, #f5576c, #f9a826, #4facfe);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
-  }
-  .hero .sub {
-    font-size: 1.1rem; color: var(--text-secondary);
-    max-width: 520px; margin: 0 auto 36px;
-    line-height: 1.7;
-  }
-  .hero-wave {
-    width: 100%; height: 48px; margin-top: 12px;
-    opacity: 0.28;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--accent) 0px, var(--accent) 2px,
-      transparent 2px, transparent 4px
-    );
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-  }
+}
+.subtitle { color:#777; font-size:1em; letter-spacing:1px; }
 
-  /* ===== ALERT ===== */
-  .alert {
-    display: flex; align-items: center; gap: 14px;
-    background: rgba(240,164,88,0.06);
-    border: 1px solid rgba(240,164,88,0.18);
-    border-radius: var(--radius-lg); padding: 18px 24px;
-    margin-bottom: 28px;
-  }
-  .alert-icon {
-    flex-shrink: 0;
-    width: 40px; height: 40px; border-radius: 50%;
-    background: rgba(240,164,88,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
-  }
-  .alert strong { color: var(--accent); font-weight: 700; }
+/* ---- 耳机警告 ---- */
+.alert {
+    background: linear-gradient(135deg, rgba(255,152,0,0.15), rgba(255,80,0,0.08));
+    border:1px solid rgba(255,152,0,0.3); border-radius:14px;
+    padding:18px 24px; margin-bottom:36px; text-align:center;
+    font-size:1.1em; letter-spacing:1px;
+}
+.alert strong { color:#ff9800; }
 
-  /* ===== SECTION HEADERS ===== */
-  .sec-head { margin-bottom: 40px; }
-  .sec-head h2 {
-    font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em;
-    margin-bottom: 10px;
-  }
-  .sec-head p { color: var(--text-secondary); font-size: 0.95rem; max-width: 600px; }
+/* ---- 分区 ---- */
+.section {
+    margin-bottom:36px;
+    background: rgba(255,255,255,0.02); border-radius:16px;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:20px 24px 16px;
+}
+.section-header { margin-bottom:14px; }
+.section-header h2 {
+    font-size:1.2em; color:#eee; margin-bottom:4px; letter-spacing:1px;
+}
+.section-hint {
+    font-size:0.85em; color:#888; line-height:1.5;
+}
 
-  /* ===== INTRO CARDS ===== */
-  .intro-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-    margin-bottom: 48px;
-  }
-  .intro-card {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 28px 24px;
-    transition: var(--transition);
-  }
-  .intro-card:hover { border-color: rgba(255,255,255,0.12); background: var(--bg-card-hover); }
-  .intro-card .ic-icon {
-    width: 44px; height: 44px; border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; margin-bottom: 16px;
-  }
-  .intro-card h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 6px; }
-  .intro-card p { font-size: 0.87rem; color: var(--text-secondary); line-height: 1.65; }
+/* ---- 表格 ---- */
+table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+td {
+    padding:10px 14px; background:rgba(255,255,255,0.04);
+    vertical-align:middle;
+}
+td:first-child { border-radius:10px 0 0 10px; width:140px; }
+td:last-child { border-radius:0 10px 10px 0px; }
+.badge {
+    display:inline-block; padding:5px 16px; border-radius:20px;
+    color:#fff; font-weight:bold; font-size:0.9em; letter-spacing:0.5px;
+}
+code { color:#999; font-size:0.82em; font-family: 'SF Mono','Consolas','Menlo',monospace; }
+audio { vertical-align:middle; width:260px; height:32px; }
+audio::-webkit-media-controls-panel { background:rgba(255,255,255,0.08); }
 
-  /* ===== AUDIO CARDS ===== */
-  .audio-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  .audio-card {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 18px 16px 14px;
-    transition: var(--transition);
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .audio-card:hover { border-color: rgba(255,255,255,0.10); }
-  .audio-card .pos-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 0.82rem; font-weight: 700;
-    padding: 5px 12px; border-radius: 20px;
-    width: fit-content;
-  }
-  .audio-card .pos-badge .dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  }
-  .audio-card .params {
-    font-size: 0.75rem; color: var(--text-muted);
-    font-family: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
-  }
-  .audio-card audio { width: 100%; height: 32px; }
+/* ---- 原理说明 ---- */
+.principles {
+    margin-top:40px; display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap:16px;
+}
+.principle-card {
+    background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px; padding:18px 20px;
+}
+.principle-card h3 { font-size:1em; margin-bottom:6px; }
+.principle-card p { font-size:0.82em; color:#999; line-height:1.6; }
+.c1 h3 { color:#f5576c; } .c2 h3 { color:#f9a826; } .c3 h3 { color:#4facfe; }
 
-  /* custom audio colors */
-  audio::-webkit-media-controls-panel { background: var(--bg-surface); }
-  audio::-webkit-media-controls-current-time-display,
-  audio::-webkit-media-controls-time-remaining-display { color: var(--text-secondary); }
+/* ---- 底部 ---- */
+.qr-hint {
+    text-align:center; margin-top:44px; padding:28px;
+    background:rgba(255,255,255,0.025); border-radius:14px;
+    border:1px solid rgba(255,255,255,0.05);
+}
+.qr-hint h3 { margin-bottom:14px; color:#4facfe; font-size:1.1em; }
+.qr-img {
+    width:200px; height:200px; border-radius:14px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.4);
+    background:#fff; padding:8px;
+}
+.footer {
+    text-align:center; margin-top:30px; color:#555; font-size:0.78em;
+    letter-spacing:0.5px;
+}
 
-  /* ===== CHART SECTION ===== */
-  .chart-wrap {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 28px; margin-bottom: 24px;
-  }
-  .chart-wrap h3 { font-size: 1.08rem; font-weight: 700; margin-bottom: 16px; }
-  .chart-wrap img {
-    width: 100%; border-radius: var(--radius-md);
-    display: block;
-  }
-
-  /* ===== QR SECTION ===== */
-  .qr-section {
-    text-align: center; padding: 50px 0 30px;
-  }
-  .qr-card {
-    display: inline-flex; flex-direction: column; align-items: center; gap: 16px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 32px 48px;
-  }
-  .qr-card img { width: 160px; border-radius: var(--radius-md); }
-  .qr-card p { color: var(--text-secondary); font-size: 0.9rem; }
-
-  /* ===== FOOTER ===== */
-  footer {
-    text-align: center; padding: 40px 0 50px;
-    color: var(--text-muted); font-size: 0.8rem;
-    border-top: 1px solid var(--border);
-  }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 768px) {
-    .hero { padding: 60px 0 36px; }
-    .hero h1 { font-size: 1.9rem; }
-    .hero .sub { font-size: 0.95rem; }
-    section { padding: 48px 0; }
-    .intro-grid { grid-template-columns: 1fr; }
-    .audio-grid { grid-template-columns: repeat(2, 1fr); }
-    .nav-pill a { padding: 7px 14px; font-size: 0.8rem; }
-    .qr-card { padding: 24px 28px; }
-  }
-  @media (max-width: 480px) {
-    .container { padding: 0 16px; }
-    .audio-grid { grid-template-columns: 1fr; }
-  }
+/* ---- 响应式 ---- */
+@media (max-width:600px) {
+    body { padding:16px 10px 40px; }
+    h1 { font-size:1.5em; }
+    .section { padding:14px 12px 10px; }
+    td { padding:8px 6px; }
+    td:first-child { width:100px; }
+    .badge { font-size:0.75em; padding:4px 10px; }
+    audio { width:160px; }
+    code { font-size:0.7em; }
+}
 </style>
 </head>
 <body>
+<div class="container">
 
-<div class="ambient ambient-1"></div>
-<div class="ambient ambient-2"></div>
-<div class="ambient ambient-3"></div>
+<div class="header">
+    <h1>🎧 HRTF 3D 空间音频</h1>
+    <p class="subtitle">信号处理课程汇报 · 双耳空间音频演示</p>
+</div>
 
-<!-- Navigation -->
-<nav>
-  <div class="nav-pill">
-    <a href="#hero" class="active">概览</a>
-    <a href="#samples">试听</a>
-    <a href="#share">分享</a>
-  </div>
-</nav>
+<div class="alert">
+    ⚠️ <strong>请佩戴耳机聆听！</strong> 音箱/外放将完全失去空间定位效果
+</div>
 
-<!-- ===== HERO ===== -->
-<section class="hero" id="hero">
-  <div class="container">
-    <span class="hero-tag">Signal Processing</span>
-    <h1>HRTF 3D 空间音频</h1>
-    <p class="sub">
-      基于头相关传输函数（HRTF）的双耳空间音频演示，
-      通过方位角与仰角参数控制声源在三维空间中的感知位置。
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>🔊 水平面 — 左右定位</h2>
+                    <p class="section-hint">💡 左右切换时能明显听到声像移动（ITD + ILD 线索）</p>
+                </div>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#9C27B0">正左方 -90°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=-90° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a-90_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#2196F3">左前方 -45°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=-45° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a-45_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#E91E63">正前方 0°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#FF9800">右前方 +45°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+45° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+45_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#4CAF50">正右方 +90°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+90° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+90_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2>↕️ 仰角对比 — 上下感知</h2>
+                    <p class="section-hint">💡 同一前方方位，切换仰角。注意音色"亮度"变化——仰角越高，高频越亮，陷波频率向高处移动</p>
+                </div>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#FF7043">前下方 -30°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=-30°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e-30.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#E91E63">正前方 0°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#00BCD4">前上方 +45°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=+45°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e+45.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#FF5722">头顶 +90°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=+90°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e+90.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2>🔄 前后对比 — 混淆锥</h2>
+                    <p class="section-hint">💡 前方 vs 后方在 ITD 上完全相同！只能靠频谱区分：后方声源高频大幅衰减（-18dB），且有 1.8kHz 特征陷波</p>
+                </div>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#E91E63">正前方 0°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+0° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+0_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#607D8B">正后方 180°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+180° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+180_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#FF9800">右前方 +45°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+45° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+45_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#795548">右后方 135°</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+135° 仰角=+0°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+135_e+0.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr></tbody>
+                </table>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2>📍 复合方位</h2>
+                    <p class="section-hint">💡 方位和仰角同时变化，综合体验 3D 空间感</p>
+                </div>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td class="label-cell">
+                            <span class="badge" style="background:#8D6E63">右前上方</span>
+                        </td>
+                        <td class="param-cell"><code>方位=+45° 仰角=+30°</code></td>
+                        <td class="audio-cell">
+                            <audio controls preload="none">
+                                <source src="3d_a+45_e+30.wav" type="audio/wav">
+                            </audio>
+                        </td>
+                    </tr></tbody>
+                </table>
+            </div>
+
+<div class="principles">
+    <div class="principle-card c1">
+        <h3>🔴 ITD · 双耳时间差</h3>
+        <p>声源偏左→左耳先到。低频 (&lt;1.5kHz) 主导左右定位。<br>范围：-660 ~ +660 μs</p>
+    </div>
+    <div class="principle-card c2">
+        <h3>🟡 ILD · 双耳声级差</h3>
+        <p>头部遮挡使远耳高频衰减。高频 (&gt;3kHz) 主导。<br>最大可达 30+ dB @ 8kHz</p>
+    </div>
+    <div class="principle-card c3">
+        <h3>🔵 Pinna · 耳廓频谱</h3>
+        <p>多个深度陷波 (5-12kHz)，频率随仰角移动。<br><strong>上下/前后定位的唯一线索</strong></p>
+    </div>
+</div>
+
+<div class="qr-hint">
+    <h3>📱 扫码试听</h3>
+    <img src="qr_code.png" alt="QR码" class="qr-img">
+    <p style="color:#999; margin-top:16px; line-height:1.6;">
+        手机扫描二维码，戴上耳机即可试听全部 3D 方位<br>
+        <span style="color:#555; font-size:0.85em;">需将本文件夹托管到静态服务器</span>
     </p>
-    <div class="hero-wave"></div>
-  </div>
-</section>
+</div>
 
-<!-- ===== WHAT IS HRTF ===== -->
-<section>
-  <div class="container">
-    <div class="sec-head">
-      <h2>什么是 HRTF</h2>
-      <p>头相关传输函数（Head-Related Transfer Function）描述了声波从声源传播到双耳的滤波过程，是空间听觉感知的核心。</p>
-    </div>
-    <div class="intro-grid">
-      <div class="intro-card">
-        <div class="ic-icon" style="background:rgba(240,164,88,0.12)">&#x1F3A7;</div>
-        <h3>双耳线索</h3>
-        <p>利用双耳时间差（ITD）和双耳声级差（ILD），大脑能够定位声源的方向与距离。</p>
-      </div>
-      <div class="intro-card">
-        <div class="ic-icon" style="background:rgba(101,184,194,0.12)">&#x1F4CA;</div>
-        <h3>频谱滤波</h3>
-        <p>外耳和头部的几何结构对入射声波产生方向相关的滤波效应，形成独特的频谱特征。</p>
-      </div>
-      <div class="intro-card">
-        <div class="ic-icon" style="background:rgba(192,132,252,0.12)">&#x1F9E0;</div>
-        <h3>空间感知</h3>
-        <p>听觉系统结合 HRTF 滤波后的信号，实时重建三维声场，实现沉浸式空间听觉体验。</p>
-      </div>
-    </div>
+<p class="footer">
+    HRTF 合成：球头模型 (Woodworth & Schlosberg) + 多陷波耳廓模型 + 肩部反射梳状滤波 + 早期反射<br>
+    改进版 — 增强仰角 & 前后频谱线索
+</p>
 
-    <!-- Headphone Alert -->
-    <div class="alert">
-      <div class="alert-icon">&#x1F3A7;</div>
-      <div>
-        <strong>请佩戴耳机聆听(前后侧由于音频质量原因可能不是很清楚)</strong>
-        <span style="color:var(--text-secondary);margin-left:8px;font-size:0.9rem;">音箱播放将失去空间定位效果，双耳线索无法正确传递。</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== AUDIO SAMPLES ===== -->
-<section id="samples">
-  <div class="container">
-    <div class="sec-head">
-      <h2>空间音频试听</h2>
-      <p>每个采样点对应不同的方位角（Azimuth）与仰角（Elevation），使用 HRTF 滤波器卷积生成。</p>
-    </div>
-    <div class="audio-grid">
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(251,113,133,0.12);color:var(--accent-4)">
-          <span class="dot" style="background:var(--accent-4)"></span>正前方
-        </div>
-        <div class="params">Az +0° / El +0°</div>
-        <audio controls preload="none">
-          <source src="3d_a+0_e+0.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(240,164,88,0.12);color:var(--accent)">
-          <span class="dot" style="background:var(--accent)"></span>右前方 45°
-        </div>
-        <div class="params">Az +45° / El +0°</div>
-        <audio controls preload="none">
-          <source src="3d_a+45_e+0.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(101,184,194,0.12);color:var(--accent-2)">
-          <span class="dot" style="background:var(--accent-2)"></span>正右方 90°
-        </div>
-        <div class="params">Az +90° / El +0°</div>
-        <audio controls preload="none">
-          <source src="3d_a+90_e+0.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(148,163,184,0.12);color:#94a3b8">
-          <span class="dot" style="background:#94a3b8"></span>左前方 -45°
-        </div>
-        <div class="params">Az -45° / El +0°</div>
-        <audio controls preload="none">
-          <source src="3d_a-45_e+0.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(192,132,252,0.12);color:var(--accent-3)">
-          <span class="dot" style="background:var(--accent-3)"></span>正左方 -90°
-        </div>
-        <div class="params">Az -90° / El +0°</div>
-        <audio controls preload="none">
-          <source src="3d_a-90_e+0.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(56,189,248,0.12);color:#38bdf8">
-          <span class="dot" style="background:#38bdf8"></span>前上方 45°
-        </div>
-        <div class="params">Az +0° / El +45°</div>
-        <audio controls preload="none">
-          <source src="3d_a+0_e+45.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(251,146,60,0.12);color:#fb923c">
-          <span class="dot" style="background:#fb923c"></span>头顶 90°
-        </div>
-        <div class="params">Az +0° / El +90°</div>
-        <audio controls preload="none">
-          <source src="3d_a+0_e+90.wav" type="audio/wav">
-        </audio>
-      </div>
-
-      <div class="audio-card">
-        <div class="pos-badge" style="background:rgba(167,139,250,0.12);color:#a78bfa">
-          <span class="dot" style="background:#a78bfa"></span>右前上方
-        </div>
-        <div class="params">Az +45° / El +30°</div>
-        <audio controls preload="none">
-          <source src="3d_a+45_e+30.wav" type="audio/wav">
-        </audio>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ===== QR / SHARE ===== -->
-<section class="qr-section" id="share">
-  <div class="container">
-    <div class="qr-card">
-      <img src="qr_code.png" alt="页面二维码">
-      <p>扫描二维码访问此页面</p>
-    </div>
-  </div>
-</section>
-
-<!-- ===== FOOTER ===== -->
-<footer>
-  <div class="container">
-    <p>信号处理课程汇报 &middot; HRTF 双耳空间音频 &middot; 请佩戴耳机体验</p>
-  </div>
-</footer>
-
+</div>
 </body>
 </html>
